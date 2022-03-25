@@ -89,8 +89,8 @@ https:
 # MESSAGING BROKER
 ###################################################
 sqs:
-  accessKey: "AKIAQCS7OF3IUXVEHW5P"
-  accessSecret: "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"
+  accessKey: "CHANGE_BY_ACCESS_KEY"
+  accessSecret: "CHANGE_BY_ACCESS_SECRET"
   regionEndpoint: "eu-central-1"
   exception:
     deadLetter:

@@ -2,5 +2,5 @@
 # MESSAGING BROKER
 ###################################################
 sqs:
-  clientId: "AKIAQCS7OF3IUXVEHW5P"
-  clientSecret: "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"
+  clientId: "CHANGE_BY_CLIENT_ID"
+  clientSecret: "CHANGE_BY_CLIENT_SECRET"
