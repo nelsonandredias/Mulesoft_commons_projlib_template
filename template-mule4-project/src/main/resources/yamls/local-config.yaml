@@ -1,0 +1,125 @@
+###################################################
+# PROJECT PROPERTIES
+###################################################
+app:
+  name: "${project.artifactId}"
+  
+###################################################
+# DEPLOYMENT ENVIRONMENT
+###################################################
+deployment:
+  environment: "local"
+
+###################################################
+# JSON LOGGER PROPERTIES
+###################################################
+json:
+  logger:
+    application:
+      name: "${project.artifactId}"
+      version: "${project.version}"
+    priority: "INFO"
+    category: ""
+    jms: 
+      destination: "q.${deployment.environment}.logging"
+      url: ""  
+    fields:
+      mask: ""
+      disable: ""
+
+###################################################
+# EXCEPTION EMAIL NOTIFICATION PROPERTIES
+###################################################
+email:
+  exception:
+    technical:
+      notification: "true"
+      emailList: "email1@gmail.com, email2@gmail.com"
+    business:
+      notification: "true"
+      emailList: "email1@gmail.com, email2@gmail.com"
+
+###################################################
+# GLOBAL ERROR HANDLER CONFIGURATION PROPERTIES
+###################################################
+errorCodeMessage:
+  badRequest:
+    code: "400"
+    message: "Bad Request"
+  unauthorized:
+    code: "401"
+    message: "Unauthorized"
+  notFound:
+    code: "404"
+    message: "Resource Not Found"
+  methodNotAllowed:
+    code: "405"
+    message: "Method Not Allowed"
+  notAcceptable:
+    code: "406"
+    message: "Not Acceptable"
+  unsupportedMediaType:
+    code: "415"
+    message: "Unsupported Media Type"
+  tooManyRequests:
+    code: "429"
+    message: "Too Many Requests"
+  serverError:
+    code: "500"
+    message: "Internal Server Error"
+  serviceUnavailable:
+    code: "503"
+    message: "Service Unavailable"
+  timeout:
+    code: "504"
+    message: "Connection Timeout"
+    
+###################################################
+# HTTP/HTTPS CONFIGURATION PROPERTIES
+###################################################
+http:
+  private:
+    port: "8081"
+    
+https:
+  private:
+    port: "8082"
+
+###################################################
+# MESSAGING BROKER
+###################################################
+sqs:
+  accessKey: "AKIAQCS7OF3IUXVEHW5P"
+  accessSecret: "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"
+  regionEndpoint: "eu-central-1"
+  exception:
+    deadLetter:
+      queue: "https://sqs.eu-central-1.amazonaws.com/005568868049/e-local-deadletter"
+      maxRetriesAttempts: "3"
+      visibilityTimeout: "30"
+      numberOfMessages: "10"
+      waitTime: "20"
+      consumingThreads: "16"
+      polling:
+        frequency: "1000"
+        deliveryDelay: "3"
+    businessLogic:
+      queue: "https://sqs.eu-central-1.amazonaws.com/005568868049/e-local-businesslogic"
+      maxRetriesAttempts: "3"
+      visibilityTimeout: "30"
+      numberOfMessages: "10"
+      waitTime: "20"
+      consumingThreads: "16"
+      polling:
+        frequency: "1000"
+        deliveryDelay: "3"
+  sourceMediation:
+    queueUrl: "https://sqs.eu-central-1.amazonaws.com/005568868049/e-local-test"
+    queueName: "e-local-test"
+    visibilityTimeout: "30"
+    numberOfMessages: "10"
+    waitTime: "20"
+    consumingThreads: "16"
+    polling:
+      frequency: "1000"
+      deliveryDelay: "3"

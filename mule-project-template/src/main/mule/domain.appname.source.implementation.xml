@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+	<sub-flow name="source-implementation" doc:id="7a79a4b1-222d-4a1d-8a7b-f798aa385d04" >
+		<flow-ref doc:name="source-process-flow" doc:id="47ae007c-572f-4b8d-a766-25b99b31e414" name="source-process-flow"/>
+	</sub-flow>
+	<flow name="source-process-flow" doc:id="3b36ec72-5326-4291-8bb2-159bc1b24174" >
+		<raise-error doc:name="Raise error EXPRESSION" doc:id="4c2b26b6-a085-4944-b8e7-ff026d40c219" type="EXPRESSION"/>
+	</flow>
+</mule>

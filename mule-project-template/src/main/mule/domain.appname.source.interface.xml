@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="interfaceFlow" doc:id="3055c889-902f-4de7-9331-5383a66af947" >
+		<http:listener doc:name="Listener" doc:id="ff1f7b18-2d0b-41ba-a6c2-8da572364a8b" path="/test" config-ref="HTTP_Listener_config">
+			<http:response statusCode="#[vars.httpStatus]" />
+			<http:error-response statusCode="#[vars.httpStatus]" >
+				<http:body ><![CDATA[#[payload]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<flow-ref doc:name="source-starter" doc:id="d588d651-b004-4911-bf82-0610af5086df" name="source-starter"/>
+		<error-handler ref="global-error-handler" />
+	</flow>
+	<sub-flow name="source-starter" doc:id="bc1621fc-2fa6-4e9f-ba9c-711f36b2b57e" >
+		<ee:transform doc:name="Set Process Flow, Set Flow Name, Set Logic Name" doc:id="65466cec-4971-4fa4-8147-3b22df3ecff0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[message.payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="processFlow" ><![CDATA["process-business-message-async"]]></ee:set-variable>
+				<ee:set-variable variableName="flowName" ><![CDATA["commons-framework"]]></ee:set-variable>
+				<ee:set-variable variableName="logicName" ><![CDATA["source-logic"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="main" doc:id="41834e01-1b0f-4db9-83d5-84bd343e1917" name="main" />
+	</sub-flow>
+	<sub-flow name="source-logic" doc:id="8be54276-d073-4747-9cc0-0bb589bf501a" >
+		<flow-ref doc:name="source-implementation" doc:id="a3d05b07-9f79-4241-8f56-4fcbe85789f1" name="source-implementation" />
+	</sub-flow>
+</mule>

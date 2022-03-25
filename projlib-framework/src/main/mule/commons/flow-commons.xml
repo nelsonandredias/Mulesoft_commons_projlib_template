@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="set-process-flow" doc:id="658e8596-aa76-463f-9d0c-eceb6c753f56" >
+		<set-variable value='#[vars.processFlow default ""]' doc:name="Set Process Flow" doc:id="aa075ee4-4bbb-4e24-8f34-399b30226b31" variableName="processFlow"/>
+	</sub-flow>
+	<sub-flow name="remove-process-flow" doc:id="3a4b498e-be40-4216-a642-52afbba77759" >
+		<remove-variable doc:name="Remove Process Flow" doc:id="dd33a7f1-7be4-4e91-aa0a-b1b54902d4db" variableName="processFlow"/>
+	</sub-flow>
+	<sub-flow name="set-logic-name" doc:id="7660ca9a-1a81-4294-8879-b963d1f126bf" >
+		<set-variable value='#[vars.logicName default "logic"]' doc:name="Set Logic Name" doc:id="cfe61990-52d6-4a03-93fc-67f98b8178da" variableName="logicName" />
+	</sub-flow>
+	<sub-flow name="remove-logic-name" doc:id="c85c0334-3cd8-47f6-85b1-e7715b97cdf7" >
+		<remove-variable doc:name="Remove Logic Name" doc:id="a8622930-abb0-41a2-a01e-b89a2c5afbd1" variableName="logicName"/>
+	</sub-flow>
+	<sub-flow name="set-api-instance-correlationId" doc:id="068784cc-4b02-4eb0-a754-533c25a7ec84" >
+		<set-variable value="#[correlationId default uuid()]" doc:name="Set API Instance CorrelationId" doc:id="7fffaeef-037f-4a9c-b679-da1110f413c0" variableName="apiCorrelationId" />
+	</sub-flow>
+	<sub-flow name="remove-api-instance-correlationId" doc:id="d80d4c1a-0d1c-44e2-b514-2c8d94cb1141" >
+		<remove-variable doc:name="Remove API Instance CorrelationId" doc:id="153f54e2-80fc-49b5-9587-fbc5dd7f6c19" variableName="apiCorrelationId" />
+	</sub-flow>
+	<sub-flow name="set-variable-initial-payload" doc:id="b98dc24f-4825-4100-ad84-d22459bb22eb" >
+		<set-variable value="#[message.payload.originalPayload default message.payload]" doc:name="Set Initial Payload" doc:id="0b1de1b0-d9d5-4795-8f3b-ff7e9b27fde1" variableName="initialPayload" />
+	</sub-flow>
+	<sub-flow name="remove-variable-initial-payload" doc:id="466a1114-dede-4a1f-9362-080eb6ed543b" >
+		<remove-variable doc:name="Remove Initial Payload" doc:id="b9abe412-d0f6-4f9b-815c-c1236e52d84a" variableName="initialPayload" />
+	</sub-flow>
+	<sub-flow name="set-retry-processing-properties" doc:id="4ffb6fc6-a8a7-4cb0-806e-bdf4b2f5d8aa" >
+		<ee:transform doc:name="Set Payload, Set retryCount, Set sourceQueueName" doc:id="13f90ae6-ba44-48a5-bb19-8ebc718aba8b">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+
+output application/json
+---
+message.payload.originalPayload default vars.initialPayload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="retryCount"><![CDATA[%dw 2.0
+
+output application/java
+---
+if (message.payload.retryCount != null and message.payload.retryCount !="")
+	message.payload.retryCount
+else if ((message.attributes.'retryCount'.'stringValue' != null and message.attributes.'retryCount'.'stringValue' !=""))
+	message.attributes.'retryCount'.'stringValue'
+else 
+	1]]></ee:set-variable>
+				<ee:set-variable variableName="sourceQueueName"><![CDATA[
+/*output application/java
+---
+message.attributes.'originalQueueName'.'stringValue' default ""
+*/
+
+%dw 2.0
+
+output application/java
+---
+if ((vars.queueUrl != null and vars.queueUrl !=""))
+	vars.queueUrl
+else if (message.attributes.'originalQueueName'.'stringValue' != null and message.attributes.'originalQueueName'.'stringValue' !='-')
+	message.attributes.'originalQueueName'.'stringValue'
+else 
+	"-"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="remove-retry-processing-properties" doc:id="c53426bb-a4d5-413d-82da-bb18ab22875e" >
+		<remove-variable doc:name="Remove retryCount" doc:id="56865d65-6afc-441b-bb40-18f068eb1e6f" variableName="retryCount" />
+		<remove-variable doc:name="Remove sourceQueueName" doc:id="1b86504a-b486-4f75-b14d-b25fcfdaf5c7" variableName="sourceQueueName" />
+	</sub-flow>
+	<sub-flow name="set-all-variables" doc:id="8dd763d7-d2b6-4c04-9284-53e7d47040eb">
+		<flow-ref doc:name="set-logic-name" doc:id="e2b0908a-9662-461d-9323-ebd84aa7403d" name="set-logic-name" />
+		<flow-ref doc:name="set-api-instance-correlationId" doc:id="2557d66a-01b0-4c68-93e7-c43293365a11" name="set-api-instance-correlationId" />
+		<flow-ref doc:name="set-variable-initial-payload" doc:id="aa10215a-55db-4607-83a3-1a178d6c910c" name="set-variable-initial-payload" />
+		<flow-ref doc:name="set-retry-processing-properties" doc:id="2bde3d3f-2bd2-492a-abc5-0ee5707a6041" name="set-retry-processing-properties" />
+	</sub-flow>
+	<sub-flow name="remove-all-variables" doc:id="3dba5664-fde2-476a-9486-2746d025981c" >
+		<flow-ref doc:name="remove-api-instance-correlationId" doc:id="650f0fa0-3cdd-4931-bef5-85f8f99b3a52" name="remove-api-instance-correlationId" />
+		<flow-ref doc:name="remove-variable-initial-payload" doc:id="c13c606d-dbc4-428c-b3dd-b0bedc676c84" name="remove-variable-initial-payload" />
+		<flow-ref doc:name="remove-logic-name" doc:id="97bf5f13-a6a4-4bff-a098-2d4c1ca2527d" name="remove-logic-name"/>
+		<flow-ref doc:name="remove-process-flow" doc:id="92f9b408-ec8c-42e0-b48b-4449540f837d" name="remove-process-flow"/>
+		<flow-ref doc:name="remove-retry-processing-properties" doc:id="8a2d64d2-07ac-492d-a92d-b04e62b4e8d9" name="remove-retry-processing-properties" />
+	</sub-flow>
+	<sub-flow name="main" doc:id="e31ca7cb-65d9-4a9d-a4f1-ffaa652fe9ac" >
+		<flow-ref doc:name="set-all-variables" doc:id="8a1a1224-20a1-48ff-a65a-1be2a55d7aca" name="set-all-variables" />
+		<flow-ref doc:name="log-start" doc:id="3585816e-00b7-4a54-9ac5-24859bea93c4" name="log-start" />
+		<choice doc:name="Choice" doc:id="698dc511-9774-4337-abcc-1da73a6a1be7" >
+			<when expression='#[!isBlank(vars.logicName)]'>
+				<flow-ref doc:name="dynamic logic" doc:id="a5cf8607-9e3f-4eca-9b9d-a38a93ae84a9" name="#[vars.logicName]"/>
+			</when>
+			<otherwise >
+				<flow-ref doc:name="logic" doc:id="2a2936a9-479e-4a9f-9a3c-a1829304bff3" name='logic' />
+			</otherwise>
+		</choice>
+		<flow-ref doc:name="log-end" doc:id="dad067db-bd62-4e0b-ba8c-3067a139acbc" name="log-end"/>
+		<flow-ref doc:name="remove-all-variables" doc:id="d91dbcbe-e556-4fcb-92b8-1d61db90529a" name="remove-all-variables" />
+	</sub-flow>
+	<flow name="logic" doc:id="75057a24-7632-49d5-be7a-db0e3a6defe0" >
+		<flow-ref doc:name="set-process-flow" doc:id="2ff4520c-0ce3-44b6-9929-9da1274fbf28" name="set-process-flow"/>
+		<flow-ref doc:name="dynamic-process-flow" doc:id="0a89dc12-42a9-4e12-9d92-c342532ecc9a" name='#[vars.processFlow default "source-implementation"]' />
+	</flow>
+</mule>

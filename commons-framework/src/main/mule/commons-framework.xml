@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="commons-frameworkFlow" doc:id="c27b9197-14a0-41c7-86b7-b639b2b77fe2" >
+		<http:listener doc:name="Listener" doc:id="55f43241-f5a6-455d-91dc-95ea0203b098" config-ref="HTTP_Listener_config" path="/commons-framework"/>
+		<flow-ref doc:name="Flow Reference" doc:id="042888ae-c258-4f0e-9ee2-53b6ce37a384" name="sample-proj-private"/>
+		<logger level="INFO" doc:name="Logger" doc:id="11c3e8ab-15fd-4032-9345-4b1dbb864b2a" />
+	</flow>
+</mule>

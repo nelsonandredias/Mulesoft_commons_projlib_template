@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	 xmlns:sqs="http://www.mulesoft.org/schema/mule/sqs" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/sqs http://www.mulesoft.org/schema/mule/sqs/current/mule-sqs.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<json-logger:config name="JSON_Logger_Config" doc:name="JSON Logger Config" doc:id="326e8def-d1f2-4fb8-b1f9-88e546854e31" environment="${deployment.environment}" disabledFields="${json.logger.fields.disable}" contentFieldsDataMasking="${json.logger.fields.mask}">
+	</json-logger:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="1db0b615-8672-4e2d-9527-49d9c6aa4e6f" file="commons-projlib.yaml" doc:description="reference to projlib commons properties"/>
+	<sqs:config name="Amazon_SQS_Configuration" doc:name="Amazon SQS Configuration" doc:id="815b83d9-8a18-4bb7-8f21-0425d8cbe7ea" >
+		<sqs:basic-connection accessKey="${sqs.accessKey}" secretKey="${sqs.accessSecret}" region="${sqs.regionEndpoint}" />
+	</sqs:config>
+	<global-property doc:name="Global Property" doc:id="4bbae380-3336-42ef-ae94-cedf47155b77" name="mule.priority" value="INFO" doc:description="reference to global property mule.tracepoint"/>
+	<global-property doc:name="Global Property" doc:id="c89f9383-db7f-4c34-950a-c0dabb718da9" doc:description="reference to global property mule.env" name="mule.env" value="local" />
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="148470de-e976-45ea-bbb1-2d04143964a3" >
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_Elasticsearch" doc:name="HTTP Request configuration" doc:id="783f86a8-63f5-49f4-bbe7-5e80cb70f73d" >
+		<http:request-connection host="localhost" port="9200" />
+	</http:request-config>
+</mule>

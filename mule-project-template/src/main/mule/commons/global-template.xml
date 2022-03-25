@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+	<import doc:name="Import" doc:id="cccf86b4-f973-45ca-82b2-cee2402cc0f1" doc:description="Import reference to global commons file" file="commons/global-commons.xml" />
+	<import doc:name="Import" doc:id="05ac3d7f-0a8a-43d0-842f-5abd2801abba" doc:description="Import reprocess of error messages" file="reprocess-error-messages.xml" />
+	<import doc:name="Import" doc:id="6471087d-debe-4e0b-b750-1a9cdb98ca1c" doc:description="Import reference to logging framework" file="logging/log-framework.xml" />
+	<global-property doc:name="Global Property" doc:id="669be264-e046-4ae6-bc3b-b99ea93623f6" doc:description="global configuration that holds the deployment environment value" name="mule.env" value="local" />
+	<configuration-properties doc:name="Configuration properties" doc:id="2ee82031-f039-42c8-a196-e86d910c142f" file="${env}-config.yaml" doc:description="onfiguration property file to be use depends on the set environment"/>
+	<configuration-properties doc:name="Configuration properties" doc:id="63b112c5-88c8-438b-9285-4f3c09ab5ea2" file="commons-config.yaml" doc:description="common configuration property file to all environments"/>
+	<global-property doc:name="Global Property" doc:id="0deee44d-1c5b-401f-92ee-30113bdb6235" name="mule.key" value="mulesoftKey" doc:description="global configuration that holds the deployment mule key for encrypt/decrypt"/>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="0744ab82-e378-4b65-b661-cdc70717a915" key="${mule.key}" file="${mule.env}-secure-config.yaml">
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<import doc:name="Import" doc:id="0fd74bd4-122e-4f8f-a280-4626170a6034" doc:description="Import reference to global common flows" file="commons/flow-commons.xml" />
+	<import doc:name="Import" doc:id="6bf5e80e-3097-4582-a01f-49a22c96010e" file="error/email-notification-strategy.xml" doc:description="Import reference to email notification strategy"/>
+	<import doc:name="Import" doc:id="a6adcaae-fcf6-4758-a2e2-a2453e3fb5bf" doc:description="Import reference to global error handler file" file="error/global-error-handler.xml" />
+	
+</mule>

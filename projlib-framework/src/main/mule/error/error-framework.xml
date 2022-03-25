@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sqs="http://www.mulesoft.org/schema/mule/sqs" xmlns:amqp="http://www.mulesoft.org/schema/mule/amqp"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/amqp http://www.mulesoft.org/schema/mule/amqp/current/mule-amqp.xsd
+http://www.mulesoft.org/schema/mule/sqs http://www.mulesoft.org/schema/mule/sqs/current/mule-sqs.xsd">
+	
+	
+	<sub-flow name="global-prepare-error-response-subflow" doc:id="3e377d7c-bd13-487c-aa18-0913a4e214a9" >
+		<ee:transform doc:name="Set Error Response" doc:id="a84d509e-7d63-420f-9660-1313ac2b2486" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+
+output application/json
+---
+{
+	errorCode: vars.httpStatus,
+	errorMessage: if (vars.errorMessage != null) vars.errorMessage else error.errorType.identifier,
+	errorDescription: if (vars.errorDescription != null) vars.errorDescription else error.description,
+	timestamp: now() as String {format: "yyyy-MM-dd'T'HH:mm:ss"},
+	correlationId: vars.apiCorrelationId,
+	originalPayload: message.payload
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="log-error-exception" doc:id="32f7012d-4306-4735-b0f2-d6a22d9320fe" name="log-error-exception" />
+		<flow-ref doc:name="execute-exception-strategy-subflow" doc:id="6ffd13cd-fe2f-41fe-a436-3a89ec3343c3" name="execute-exception-strategy-subflow" />
+		<async doc:name="Async" doc:id="060c0f29-230e-45db-909d-893bb392990b" >
+			<flow-ref doc:name="execute-email-exception-notification-strategy" doc:id="a370b987-e514-487c-b432-6243f19ce2ec" name="execute-email-exception-notification-strategy" />
+		</async>
+		<flow-ref doc:name="log-end" doc:id="277399e4-5771-4557-878b-e223a1940455" name="log-end" />
+		<flow-ref doc:name="remove-all-variables" doc:id="6f41ed4c-2f62-422a-a233-c6f730228363" name="remove-all-variables"/>
+	</sub-flow>
+	<sub-flow name="execute-exception-strategy-subflow" doc:id="ba7b2142-ea46-4736-9784-20307c52adfb">
+		<choice doc:name="Choice" doc:id="027f6aca-ee9f-43e0-abff-f0fbbcb46c69" >
+			<when expression="#[error.errorType.identifier == 'BAD_REQUEST' or &#10;error.errorType.identifier == 'EXPRESSION' or &#10;error.errorType.identifier == 'NOT_FOUND' or &#10;error.errorType.identifier == 'STREAM_MAXIMIMUM_SIZE_EXCEEDED' or &#10;error.errorType.identifier == 'BAD_SYNTAX' or &#10;error.errorType.identifier == 'QUERY_EXPRESSION' or &#10;error.errorType.identifier == 'TRANSFORMATION' or &#10;error.errorType.identifier == 'ROUTING' or&#10;error.errorType.identifier == 'VALIDATION' or&#10;error.errorType.identifier == 'UNAUTHORIZED' or&#10;error.errorType.identifier == 'DUPLICATE_MESSAGE' or&#10;error.errorType.identifier == 'SECURITY' or&#10;error.errorType.identifier == 'FORBIDDEN']">
+				<flow-ref doc:name="reprocess-business-errors-strategy" doc:id="c7e12288-42c0-47ad-9c14-21f4407210d8" name="reprocess-business-errors-strategy" />
+			</when>
+			<when expression="#[error.errorType.identifier == 'REDELIVERY_EXHAUSTED' or &#10;error.errorType.identifier == 'RETRY_EXHAUSTED' or &#10;error.errorType.identifier == 'TIMEOUT' or&#10;error.errorType.identifier == 'CONNECTIVITY' or&#10;error.errorType.identifier == 'SOURCE' or&#10;error.errorType.identifier == 'SOURCE_RESPONSE' or&#10;error.errorType.identifier == 'INTERNAL_SERVER_ERROR' or&#10;error.errorType.identifier == 'PUBLISHING']">
+				<flow-ref doc:name="reprocess-system-errors-strategy" doc:id="4d5857c4-f66d-4bc3-83a6-81dc60030536" name="reprocess-system-errors-strategy" />
+			</when>
+			<otherwise >
+				<flow-ref doc:name="reprocess-system-errors-strategy" doc:id="1fc36a28-7116-43ae-bcd2-0b54fd211733" name="reprocess-system-errors-strategy" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="reprocess-system-errors-strategy" doc:id="cbc70815-1398-4217-a625-2eecb3b173ab" >
+		<choice doc:name="Check Reprocess System Exception Strategy" doc:id="73a50720-6d74-4ae9-a294-3c878f1a106f" >
+			<when expression="#[!isBlank(vars.retryCount) and (vars.retryCount as Number == Mule::p('sqs.exception.businessLogic.maxRetriesAttempts') as Number) and vars.sourceQueueName != &quot;-&quot;]">
+				<try doc:name="Try" doc:id="36197b81-a2ea-453a-86db-8e54a21c9739">
+						<ee:transform doc:name="Prepare Reprocessing Message" doc:id="ac899004-2a37-4238-9c68-7f28b5c4e81e">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+
+output application/json
+---
+{
+	retryCount: 1,
+	originalQueueName: vars.sourceQueueName,
+	errorType: "SYSTEM"
+} ++ message.payload as Object]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+						<set-variable value='#[%dw 2.0&#10;&#10;output application/java&#10;---&#10;{&#10;	delaySeconds: 3 + 3*(vars.retryCount as Number -1),&#10;	body: write(message.payload, "application/json"),&#10;	messageAttributes:{&#10;		"correlationId":{&#10;			"stringValue": vars.apiCorrelationId,&#10;			"dataType": "String"&#10;		} as Object{&#10;			class: "org.mule.extension.sqs.api.model.MessageAttributeValue"&#10;		},&#10;		"originalQueueName":{&#10;			"stringValue": vars.sourceQueueName,&#10;			"dataType": "String"&#10;		} as Object{&#10;			class: "org.mule.extension.sqs.api.model.MessageAttributeValue"&#10;		},&#10;		"retryCount":{&#10;			"stringValue": vars.retryCount as Number,&#10;			"dataType": "Number"&#10;		} as Object{&#10;			class: "org.mule.extension.sqs.api.model.MessageAttributeValue"&#10;		}&#10;	} as Object {&#10;		class: "java.util.HashMap"&#10;	}&#10;} as Object {&#10;	class: "org.mule.extension.sqs.api.model.Message"&#10;}]' doc:name="Set messageQueue" doc:id="9bca6852-10cc-434b-bf9f-bb4edbef5161" variableName="messageQueue"/>
+					<sqs:send-message doc:name="Publish message to Dead Letter Queue" doc:id="2f63afe7-e8a0-47b1-9120-bd2da8f7169b" config-ref="Amazon_SQS_Configuration" queueUrl="${sqs.exception.deadLetter.queue}">
+						<sqs:message ><![CDATA[#[vars.messageQueue]]]></sqs:message>
+					</sqs:send-message>
+					<remove-variable doc:name="Remove messageQueue" doc:id="46f205e5-e502-4bd0-94dd-06aa8d0c7cc5" variableName="messageQueue"/>
+						<sqs:delete-message doc:name="Delete message from source-mediation queue" doc:id="5a8f6444-cc05-41b3-9fe6-bb04ae8581c8" config-ref="Amazon_SQS_Configuration" receiptHandle="#[vars.msgHandle]" queueUrl="#[vars.sourceQueueName]" />
+					<remove-variable doc:name="Remove msgHandle" doc:id="a5705285-ab65-4f16-925b-f893716a5132" variableName="msgHandle" />
+					<error-handler>
+							<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="502f1374-dd1b-4ad7-a184-1fa2027edd1d">
+								<logger level="INFO" doc:name="Publish message to DLQ Failed" doc:id="d605f2c6-4a88-4809-9e3e-7d46fb018306" message="Publish message to DLQ Failed" />
+							</on-error-continue>
+						</error-handler>
+					</try>
+			
+</when>
+			<when expression="#[!isBlank(vars.retryCount) and (vars.retryCount as Number &lt; Mule::p('sqs.exception.businessLogic.maxRetriesAttempts') as Number)&#10;and vars.sourceQueueName !=&quot;-&quot;]">
+				<try doc:name="Try" doc:id="a6a351c8-cc73-4803-91ac-34ddb54aa48e" transactionalAction="ALWAYS_BEGIN">
+						<ee:transform doc:name="Prepare Reprocessing Message" doc:id="237c51b2-c023-4892-ab48-a30ae098b710">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	retryCount: vars.retryCount as Number + 1,
+	originalQueueName: vars.sourceQueueName,
+	errorType: "SYSTEM"
+} ++ message.payload as Object]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+						<set-variable value='#[%dw 2.0&#10;&#10;output application/java&#10;---&#10;{&#10;	delaySeconds: 3 + 3*(vars.retryCount as Number -1),&#10;	body: write(message.payload, "application/json"),&#10;	messageAttributes:{&#10;		"correlationId":{&#10;			"stringValue": vars.apiCorrelationId,&#10;			"dataType": "String"&#10;		} as Object{&#10;			class: "org.mule.extension.sqs.api.model.MessageAttributeValue"&#10;		},&#10;		"originalQueueName":{&#10;			"stringValue": vars.sourceQueueName,&#10;			"dataType": "String"&#10;		} as Object{&#10;			class: "org.mule.extension.sqs.api.model.MessageAttributeValue"&#10;		},&#10;		"retryCount":{&#10;			"stringValue": vars.retryCount as Number,&#10;			"dataType": "Number"&#10;		} as Object{&#10;			class: "org.mule.extension.sqs.api.model.MessageAttributeValue"&#10;		}&#10;	} as Object {&#10;		class: "java.util.HashMap"&#10;	}&#10;} as Object {&#10;	class: "org.mule.extension.sqs.api.model.Message"&#10;}]' doc:name="Set messageBody" doc:id="28695438-0ba6-44a1-8fbd-221c1b885f1d" variableName="messageQueue" />
+					<sqs:send-message doc:name="Publish message to Business Letter Queue" doc:id="2fa7a9c8-7df3-4ad6-bb8c-1bf8b4b4cf88" config-ref="Amazon_SQS_Configuration" queueUrl="${sqs.exception.businessLogic.queue}">
+						<sqs:message><![CDATA[#[vars.messageQueue]]]></sqs:message>
+					</sqs:send-message>
+					<remove-variable doc:name="Remove messageQueue" doc:id="8bc32281-59cb-4d65-81e7-1e6387ffe430" variableName="messageQueue" />
+					<sqs:delete-message doc:name="Delete message from source-mediation queue" doc:id="ad8e62b9-42b6-4a47-8ebd-68cd326a5535" config-ref="Amazon_SQS_Configuration" receiptHandle="#[vars.msgHandle]" queueUrl="#[vars.sourceQueueName]" />
+					<remove-variable doc:name="Remove msgHandle" doc:id="088e2295-0763-496e-aef1-6ef2e7840146" variableName="msgHandle" />
+					<error-handler>
+							<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="b078a3ed-4da2-4fb4-a120-ed3c04b43b42">
+								<logger level="INFO" doc:name="Publish message to BLQ Failed" doc:id="62d0f4a9-00ef-4274-8c5e-6f49e8b22794" message='"Publish message to BLQ Failed"' />
+							</on-error-continue>
+						</error-handler>
+					</try>
+			</when>
+			<when expression="#[!isBlank(vars.retryCount) and (vars.retryCount as Number &lt; Mule::p('sqs.exception.businessLogic.maxRetriesAttempts') as Number)]">
+				<flow-ref doc:name="sync-retry-flow" doc:id="6c30778b-4c06-4c8c-851a-7746b8b9f41e" name="sync-retry-flow" />
+			
+</when>
+		</choice>
+	</sub-flow>
+	<sub-flow name="reprocess-business-errors-strategy" doc:id="ec86cac4-6593-499c-99b3-0429ddc44e1c" >
+		<choice doc:name="Check Reprocess Business Exception Strategy" doc:id="c336f02e-81b8-4b0e-8c12-d4c0d4059622" >
+			<when expression='#[vars.sourceQueueName != "-"]' >
+				<try doc:name="Try" doc:id="e397dde1-4b83-443a-bc03-46e500770f70" >
+					<ee:transform doc:name="Prepare Reprocessing Message" doc:id="cc7ba52e-6b4f-4b5c-a6c0-d8906abd8954">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+
+output application/json
+---
+{
+	retryCount: (vars.retryCount as Number),
+	originalQueueName: vars.sourceQueueName,
+	errorType: "BUSINESS"
+} ++ message.payload as Object]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<set-variable value='#[%dw 2.0&#10;&#10;output application/java&#10;---&#10;{&#10;	delaySeconds: 3 + 3*(vars.retryCount as Number -1),&#10;	body: write(message.payload, "application/json"),&#10;	messageAttributes:{&#10;		"correlationId":{&#10;			"stringValue": vars.apiCorrelationId,&#10;			"dataType": "String"&#10;		} as Object{&#10;			class: "org.mule.extension.sqs.api.model.MessageAttributeValue"&#10;		},&#10;		"originalQueueName":{&#10;			"stringValue": vars.sourceQueueName,&#10;			"dataType": "String"&#10;		} as Object{&#10;			class: "org.mule.extension.sqs.api.model.MessageAttributeValue"&#10;		},&#10;		"retryCount":{&#10;			"stringValue": vars.retryCount as Number,&#10;			"dataType": "Number"&#10;		} as Object{&#10;			class: "org.mule.extension.sqs.api.model.MessageAttributeValue"&#10;		}&#10;	} as Object {&#10;		class: "java.util.HashMap"&#10;	}&#10;} as Object {&#10;	class: "org.mule.extension.sqs.api.model.Message"&#10;}]' doc:name="Set messageQueue" doc:id="75570f69-bde2-413e-b83f-4cf291ae54ab" variableName="messageQueue" />
+					<sqs:send-message doc:name="Publish message to Dead Letter Queue" doc:id="27cd7553-1835-4f91-9589-10098d81d2d2" config-ref="Amazon_SQS_Configuration" queueUrl="${sqs.exception.deadLetter.queue}">
+						<sqs:message><![CDATA[#[vars.messageQueue]]]></sqs:message>
+					</sqs:send-message>
+					<remove-variable doc:name="Remove messageQueue" doc:id="0b4fbb4f-0fb4-4833-815c-286be655c084" variableName="messageQueue" />
+					<sqs:delete-message doc:name="Delete message from source-mediation queue" doc:id="40abfaa1-2787-458f-8955-9211d57e8def" config-ref="Amazon_SQS_Configuration" receiptHandle="#[vars.msgHandle]" queueUrl="#[vars.sourceQueueName]" />
+					<remove-variable doc:name="Remove msgHandle" doc:id="21e1ef68-5280-4de9-b493-827c6e98d160" variableName="msgHandle" />
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="603d8602-cca7-4f06-a3b1-e78abccde5f6" >
+							<logger level="INFO" doc:name="Publish message to DLQ Failed" doc:id="07d5e74a-60a1-47d0-88e3-aeaa7a6c3a39" message="Publish message to DLQ Failed" />
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</when>
+		</choice>
+	</sub-flow>
+	<flow name="sync-retry-flow" doc:id="229f5b2c-b061-4835-af9e-dd78353f2469" >
+		<ee:transform doc:name="Prepare Reprocessing Message" doc:id="0b02627a-dcf1-4035-b90f-8d13f74c51fa">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	retryCount: vars.retryCount as Number + 1,
+	originalPayload: vars.initialPayload
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+		<flow-ref doc:name="main" doc:id="f5905b19-3a47-4197-bef7-dd6e25303cfc" name="main" />
+		<error-handler ref="global-error-handler" />
+	
+</flow>
+</mule>

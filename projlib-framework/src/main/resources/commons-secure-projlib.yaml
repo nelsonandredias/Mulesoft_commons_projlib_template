@@ -1,0 +1,6 @@
+###################################################
+# MESSAGING BROKER
+###################################################
+sqs:
+  clientId: "AKIAQCS7OF3IUXVEHW5P"
+  clientSecret: "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"

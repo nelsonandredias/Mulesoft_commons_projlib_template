@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="mediation-implementation" doc:id="7a79a4b1-222d-4a1d-8a7b-f798aa385d04" >
+		<flow-ref doc:name="mediation-process-flow" doc:id="47ae007c-572f-4b8d-a766-25b99b31e414" name="mediation-process-flow"/>
+	</sub-flow>
+	<flow name="mediation-process-flow" doc:id="3b36ec72-5326-4291-8bb2-159bc1b24174" >
+		<logger level="INFO" doc:name="Logger" doc:id="73ae900b-b694-478c-ba7c-fa4d345135de" />
+	</flow>
+</mule>

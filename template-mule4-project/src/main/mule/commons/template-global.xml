@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sockets="http://www.mulesoft.org/schema/mule/sockets" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/sockets http://www.mulesoft.org/schema/mule/sockets/current/mule-sockets.xsd">
+	<global-property doc:name="Global Property" doc:id="214ebf03-ea12-459a-b038-cfc5ec27208f" doc:description="reference to global property mule.env" name="mule.env" value="local" />
+	<configuration-properties doc:name="Configuration properties" doc:id="710c8d61-8659-481f-a102-d1a05654d2d3" file="yamls/${mule.env}-config.yaml" doc:description="dynamic reference to deployment environment yaml file"/>
+	<configuration-properties doc:name="Configuration properties" doc:id="6b4cb832-0903-4552-b754-4ae9682e7921" file="yamls/commons-template.yaml" doc:description="reference to commons template yam file"/>
+	<import doc:name="Import" doc:id="46992c1b-c121-4e1a-a81d-b580dc18f9b8" doc:description="refence to global configuration elements from projlib" file="commons/global-commons.xml" />
+	<import doc:name="Import" doc:id="d2aa9cf6-cf34-4714-8576-e78b02a3b502" doc:description="reference to common flows from projlib" file="commons/flow-commons.xml" />
+	<import doc:name="Import" doc:id="3213e5eb-8e98-4fe0-861d-008bf9b82dc0" doc:description="reference to logging framework from projlib" file="logging/log-framework.xml" />
+	<import doc:name="Import" doc:id="a4468d28-a55f-41bb-ae2a-ea021fad8be5" doc:description="reference to the global error handler from projlib" file="error/global-error-handler.xml" />
+	<import doc:name="Import" doc:id="f050aa9a-cb89-4712-bcfb-5298f4bc1a13" doc:description="reference to error framework from projlib" file="error/error-framework.xml" />
+	<import doc:name="Import" doc:id="a18380fe-b532-40d1-9acc-6e77fce5b0f4" doc:description="reference to reprocess error mechanism from projlib" file="error/reprocess-error-messages.xml" />
+	<import doc:name="Import" doc:id="26452883-6b59-4a5b-91b1-bb8628852d11" file="error/email-notification-strategy.xml" doc:description="reference to email notification mechanism from projlib"/>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="d17bf26f-a2fa-43df-9d1b-235df4fe491d" >
+		<http:listener-connection host="0.0.0.0" port="${http.private.port}" />
+	</http:listener-config>
+</mule>

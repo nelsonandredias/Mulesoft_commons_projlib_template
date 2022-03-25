@@ -1,0 +1,17 @@
+####################################
+# DEPLOYMENT ENVIRONMENT
+####################################
+deployment:
+  environment: "acc"
+
+
+####################################
+# HTTP/HTTPS CONFIGURATIONS
+####################################
+http:
+  private:
+    port: "8081"
+    
+https:
+  private:
+    port: "8082"

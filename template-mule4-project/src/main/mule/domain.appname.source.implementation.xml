@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sqs="http://www.mulesoft.org/schema/mule/sqs" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/sqs http://www.mulesoft.org/schema/mule/sqs/current/mule-sqs.xsd">
+	<sub-flow name="source-implementation" doc:id="6b630fde-a00c-476e-bfcc-c12772dd306d" >
+		<flow-ref doc:name="source-process-flow" doc:id="dd8accd1-1e83-498d-815d-e76a440d91c8" name="source-process-flow" />
+	</sub-flow>
+	<flow name="source-process-flow" doc:id="4244e89f-1bce-4f77-b7c7-c47a890a3cde" >
+		<set-variable value="#[%dw 2.0&#10;&#10;output application/java&#10;---&#10;{&#10;	delaySeconds: 3 + 3*(vars.retryCount as Number -1),&#10;	body: write(message.payload, &quot;application/json&quot;),&#10;	messageAttributes:{&#10;		&quot;correlationId&quot;:{&#10;			&quot;stringValue&quot;: vars.apiCorrelationId,&#10;			&quot;dataType&quot;: &quot;String&quot;&#10;		} as Object{&#10;			class: &quot;org.mule.extension.sqs.api.model.MessageAttributeValue&quot;&#10;		},&#10;		&quot;originalQueueName&quot;:{&#10;			&quot;stringValue&quot;: Mule::p('sqs.sourceMediation.queueName'),&#10;			&quot;dataType&quot;: &quot;String&quot;&#10;		} as Object{&#10;			class: &quot;org.mule.extension.sqs.api.model.MessageAttributeValue&quot;&#10;		},&#10;		&quot;retryCount&quot;:{&#10;			&quot;stringValue&quot;: vars.retryCount as Number,&#10;			&quot;dataType&quot;: &quot;Number&quot;&#10;		} as Object{&#10;			class: &quot;org.mule.extension.sqs.api.model.MessageAttributeValue&quot;&#10;		}&#10;	} as Object {&#10;		class: &quot;java.util.HashMap&quot;&#10;	}&#10;} as Object {&#10;	class: &quot;org.mule.extension.sqs.api.model.Message&quot;&#10;}]" doc:name="Set messageQueue" doc:id="59439c77-b975-45f0-b1f1-e14c0a9ac530" variableName="messageQueue" />
+		<sqs:send-message doc:name="Send message" doc:id="7a59717a-4cd7-4950-9bbf-bd6ce19fce65" config-ref="Amazon_SQS_Configuration" queueUrl="${sqs.sourceMediation.queueUrl}">
+			<sqs:message ><![CDATA[#[vars.messageQueue]]]></sqs:message>
+		</sqs:send-message>
+		<remove-variable doc:name="Remove messageQueue" doc:id="8af1983c-6239-477d-bd85-133bda44d160" variableName="messageQueue" />
+	</flow>
+</mule>

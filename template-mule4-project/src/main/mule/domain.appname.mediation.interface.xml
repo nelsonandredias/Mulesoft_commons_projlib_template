@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sqs="http://www.mulesoft.org/schema/mule/sqs" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/sqs http://www.mulesoft.org/schema/mule/sqs/current/mule-sqs.xsd">
+	<flow name="interface" doc:id="194f269f-51ab-45d9-a98c-4d7ce4e573da" >
+		<sqs:receivemessages doc:name="Receive messages from the source layer" doc:id="cb3f679e-1832-4408-a807-3a25e0dd243a" config-ref="Amazon_SQS_Configuration" visibilityTimeout="${sqs.sourceMediation.visibilityTimeout}" preserveMessages="true" numberOfMessages="${sqs.sourceMediation.numberOfMessages}" queueUrl="${sqs.sourceMediation.queueUrl}" waitTime="${sqs.sourceMediation.waitTime}" numberOfConsumingThreads="${sqs.sourceMediation.consumingThreads}" frequency="${sqs.sourceMediation.polling.frequency}" startDelay="${sqs.sourceMediation.polling.deliveryDelay}"/>
+		<ee:transform doc:name="Convert JSON String to JSON Object" doc:id="4cbcaf02-1e96-44ad-895a-af29b5954dae" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+
+import dwls::CustomModule
+
+output application/json
+---
+CustomModule::convertJSONStringToJSONObject(message.payload as String)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[message.attributes.'sqs.message.receipt.handle']" doc:name="Set msgHandle" doc:id="07e7023f-9a3b-40c0-bb5f-694b795a4917" variableName="msgHandle" />
+		<choice doc:name="Choice" doc:id="ca60a366-93e2-4735-8bec-883baceff072" >
+			<when expression="#[!startsWith(message.attributes.'originalQueueName'.'stringValue',&quot;https://&quot;) and message.attributes.'originalQueueName'.'stringValue' != &quot;-&quot;]" >
+				<try doc:name="Try" doc:id="9db76be8-e7bb-43e0-b650-e1b7898b9ef8" >
+					<sqs:get-queue-url doc:name="Copy_of_Get queue url" doc:id="712be1f0-c4b5-47ba-ab82-d8e9f9102dd4" config-ref="Amazon_SQS_Configuration" queueName="#[message.attributes.'originalQueueName'.'stringValue']" target="queueUrl" />
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="6f17b6b4-6825-4e79-9df7-eeac9cf1f888" />
+					</error-handler>
+				</try>
+			</when>
+		</choice>
+		<flow-ref doc:name="mediation-starter" doc:id="c78378d3-06ee-494c-ab3e-237085f85e2e" name="mediation-starter" />
+		<error-handler ref="global-error-handler" />
+	</flow>
+	<sub-flow name="mediation-starter" doc:id="2852c1bc-f0c3-4a6c-9162-ab796fd64ab6" >
+		<ee:transform doc:name="Set Process Flow, Set Flow Name, Set Logic Name" doc:id="6e8043da-0f56-4383-9a4b-5c618ac18fdd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[message.payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="processFlow" ><![CDATA["mediation-process-flow"]]></ee:set-variable>
+				<ee:set-variable variableName="flowName" ><![CDATA["commons-framework"]]></ee:set-variable>
+				<ee:set-variable variableName="logicName" ><![CDATA["mediation-logic"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="main" doc:id="df4a4648-33a8-4a8d-82a4-67b2eeb28bdc" name="main" />
+	</sub-flow>
+	<sub-flow name="mediation-logic" doc:id="e288ffc8-7760-4d96-8e19-0e616653b6d4" >
+		<flow-ref doc:name="mediation-implementation" doc:id="d61f34d2-b3a3-44d7-bec4-f5fe2fa84cc8" name="mediation-implementation" />
+	</sub-flow>
+</mule>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:sqs="http://www.mulesoft.org/schema/mule/sqs"
+	xmlns:amqp="http://www.mulesoft.org/schema/mule/amqp"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/amqp http://www.mulesoft.org/schema/mule/amqp/current/mule-amqp.xsd
+http://www.mulesoft.org/schema/mule/sqs http://www.mulesoft.org/schema/mule/sqs/current/mule-sqs.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="reprocess-dlq-to-original-queue-flow" doc:id="8254613c-7cab-49f1-bebb-45605439c1a2" >
+		<sqs:receivemessages doc:name="Receive message from Dead Letter Queue" doc:id="4b49594d-e059-4e10-add5-14225788919f" config-ref="Amazon_SQS_Configuration" queueUrl="${sqs.exception.deadLetter.queue}" numberOfMessages="${sqs.exception.deadLetter.numberOfMessages}" waitTime="${sqs.exception.deadLetter.waitTime}" preserveMessages="true" visibilityTimeout="${sqs.exception.deadLetter.visibilityTimeout}" frequency="${sqs.exception.deadLetter.polling.frequency}" numberOfConsumingThreads="${sqs.exception.deadLetter.consumingThreads}" startDelay="${sqs.exception.deadLetter.polling.deliveryDelay}"/>
+		<try doc:name="Try Transactional" doc:id="7bca3beb-3f39-440c-9c81-245642d67d1f" transactionalAction="ALWAYS_BEGIN">
+			<ee:transform doc:name="Convert JSON String to JSON Object" doc:id="01898e04-c38d-45a0-ba53-fcbe3c0d63f8">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+
+import dwls::CustomModuleReadJSON
+
+output application/json
+---
+CustomModuleReadJSON::convertJSONStringToJSONObject(message.payload as String)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			<set-variable value="#[message.attributes.'sqs.message.receipt.handle']" doc:name="Set msgHandle" doc:id="e2845575-f87d-4f32-92bb-6cf4e39e4b44" variableName="msgHandle" />
+			<ee:transform doc:name="Set Process Flow, Set Flow Name, Set Logic Name" doc:id="8dcebcd6-86d3-4f6a-89f6-16ec59bc105e">
+				<ee:message>
+					<ee:set-payload><![CDATA[message.payload]]></ee:set-payload>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="processFlow"><![CDATA["mediation-process-flow"]]></ee:set-variable>
+					<ee:set-variable variableName="flowName"><![CDATA[Mule::p('app.name')]]></ee:set-variable>
+					<ee:set-variable variableName="logicName"><![CDATA["reprocess-dlq-to-original-queue-flow"]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<flow-ref doc:name="set-api-instance-correlationId" doc:id="410f0e03-570e-46f4-95cf-28391d1a04c6" name="set-api-instance-correlationId" />
+			<flow-ref doc:name="set-variable-initial-payload" doc:id="354ac0d5-5126-4c38-8d2c-0bc904d99ddd" name="set-variable-initial-payload" />
+			<flow-ref doc:name="set-retry-processing-properties" doc:id="c4d736ce-48f8-4d12-874b-da95762989a1" name="set-retry-processing-properties" />
+			<sqs:delete-message doc:name="Delete message from Dead Letter Queue" doc:id="55be5dc3-541c-4562-bdab-6518410d447c" config-ref="Amazon_SQS_Configuration" queueUrl="${sqs.exception.deadLetter.queue}" receiptHandle="#[vars.msgHandle]" />
+			<flow-ref doc:name="remove-all-variables" doc:id="4b499fb0-758c-4ac0-b42e-aef7b3aabd1b" name="remove-all-variables" />
+			<remove-variable doc:name="Remove msgHandle" doc:id="11a904a9-65c9-4121-b2a5-1a892ca15c4e" variableName="msgHandle" />
+		</try>
+	</flow>
+	<flow name="reprocess-blq-to-original-queue-flow" doc:id="d4eab02b-56c6-4f90-97b9-3bfd2ab3163c">
+		<sqs:receivemessages doc:name="Dispatch message from business logic queue to original queue" doc:id="8d31dcdc-c6ab-4609-9dc9-df8cb338d017" config-ref="Amazon_SQS_Configuration" queueUrl="${sqs.exception.businessLogic.queue}" waitTime="${sqs.exception.businessLogic.waitTime}" preserveMessages="true" visibilityTimeout="${sqs.exception.businessLogic.visibilityTimeout}" numberOfMessages="${sqs.exception.businessLogic.numberOfMessages}" frequency="${sqs.exception.businessLogic.polling.frequency}" startDelay="${sqs.exception.businessLogic.polling.deliveryDelay}" numberOfConsumingThreads="${sqs.exception.businessLogic.consumingThreads}"/>
+		<flow-ref doc:name="reprocess-logic" doc:id="9fb39ba5-e33f-4847-af04-a04158f74e68" name="reprocess-logic" />
+	</flow>
+	<sub-flow name="reprocess-logic" doc:id="11b76a1c-bcd3-4fd1-8176-4014c87604e9" >
+		<ee:transform doc:name="Convert JSON String to JSON Object" doc:id="7652a146-c21f-46d5-b999-19c97cb8f64f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+
+import dwls::CustomModuleReadJSON
+
+output application/json
+---
+CustomModuleReadJSON::convertJSONStringToJSONObject(message.payload as String)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[message.attributes.'sqs.message.receipt.handle']" doc:name="Set msgHandle" doc:id="1694cc5c-3a06-432b-9713-1e6c41535103" variableName="msgHandle" />
+		<ee:transform doc:name="Set Process Flow, Set Flow Name, Set Logic Name" doc:id="92880c71-bc6d-4184-8b5e-1e27d23746e9">
+			<ee:message>
+				<ee:set-payload><![CDATA[message.payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="processFlow"><![CDATA["mediation-process-flow"]]></ee:set-variable>
+				<ee:set-variable variableName="flowName"><![CDATA[Mule::p('app.name')]]></ee:set-variable>
+				<ee:set-variable variableName="logicName"><![CDATA["reprocess-blq-to-original-queue-flow"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="set-api-instance-correlationId" doc:id="d59448f6-b475-4245-872a-530e1fd780b1" name="set-api-instance-correlationId" />
+		<flow-ref doc:name="set-variable-initial-payload" doc:id="f9481395-73ef-46e0-a68b-e2ee9b71c949" name="set-variable-initial-payload" />
+		<flow-ref doc:name="set-retry-processing-properties" doc:id="73d8ee2f-ac4f-4d21-b41b-3beb06adcda4" name="set-retry-processing-properties" />
+		<try doc:name="Try Transactional" doc:id="adc3a1b0-43fc-4812-8179-cf547e508c12" transactionalAction="BEGIN_OR_JOIN">
+			<set-variable value='#[%dw 2.0&#10;&#10;output application/java&#10;---&#10;{&#10;	delaySeconds: 3 + 3*(vars.retryCount as Number -1),&#10;	body: write(message.payload, "application/json"),&#10;	messageAttributes:{&#10;		"correlationId":{&#10;			"stringValue": vars.apiCorrelationId,&#10;			"dataType": "String"&#10;		} as Object{&#10;			class: "org.mule.extension.sqs.api.model.MessageAttributeValue"&#10;		},&#10;		"originalQueueName":{&#10;			"stringValue": vars.sourceQueueName,&#10;			"dataType": "String"&#10;		} as Object{&#10;			class: "org.mule.extension.sqs.api.model.MessageAttributeValue"&#10;		},&#10;		"retryCount":{&#10;			"stringValue": vars.retryCount as Number,&#10;			"dataType": "Number"&#10;		} as Object{&#10;			class: "org.mule.extension.sqs.api.model.MessageAttributeValue"&#10;		}&#10;	} as Object {&#10;		class: "java.util.HashMap"&#10;	}&#10;} as Object {&#10;	class: "org.mule.extension.sqs.api.model.Message"&#10;}]' doc:name="Set messageQueue" doc:id="380c1ff4-a23f-4573-b423-ee0bb355ca87" variableName="messageQueue" />
+			<sqs:send-message doc:name="Resend payload to original queue for retry" doc:id="9204a61e-fcab-4956-bc6c-f979d93c5a5e" config-ref="Amazon_SQS_Configuration" queueUrl="#[vars.sourceQueueName]">
+				<sqs:message ><![CDATA[#[vars.messageQueue]]]></sqs:message>
+			</sqs:send-message>
+			<remove-variable doc:name="Remove messageQueue" doc:id="acd098f1-952e-4e24-97dd-38fb2017eafa" variableName="messageQueue" />
+			<sqs:delete-message doc:name="Delete message from Business Logic Queue" doc:id="5c7806a0-07a2-407a-ba24-b1cb1214d025" config-ref="Amazon_SQS_Configuration" receiptHandle="#[vars.msgHandle]" queueUrl="${sqs.exception.businessLogic.queue}" />
+			<error-handler>
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="916d7433-0677-4e70-ac78-fcb20a4a87a7">
+					<logger level="INFO" doc:name="Resend Message Failed" doc:id="1fe17bca-1de3-4721-8a17-06f1b66d17a0" message="Resend Message Failed" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<remove-variable doc:name="Remove msgHandle" doc:id="34992bd6-f3bd-4c8b-a8df-c7520fcec7aa" variableName="msgHandle" />
+		<flow-ref doc:name="remove-all-variables" doc:id="519dee0f-2150-4e54-99be-0ad6fbd19098" name="remove-all-variables" />
+	</sub-flow>
+</mule>

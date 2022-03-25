@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="log-start" doc:id="30257ed3-25f8-43c2-8830-ac9153f49d13" >
+		<set-variable value='#["START"]' doc:name="Set tracepoint" doc:id="20c47967-ab80-4d18-8d84-c6f8f057a7e0" variableName="tracepoint" />
+		<scatter-gather doc:name="Scatter-Gather" doc:id="63ba9da6-69d8-4ca0-8d10-324f4f40e5f1" target="startScatterGather">
+			<route >
+				<async doc:name="Async" doc:id="44c049b6-3c8b-41e3-946d-8aad5d451e5a">
+			<json-logger:logger doc:name="LOG START" doc:id="594d8994-c020-48fc-8494-2d50002a6f65" config-ref="JSON_Logger_Config" message='#["LOG START"]' correlationId="#[vars.apiCorrelationId]" category="${json.logger.category}" priority="#[Mule::p('json.logger.priority')]">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+	payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+		</json-logger:logger>
+		</async>
+			</route>
+			<route >
+				<async doc:name="Async" doc:id="f61720ab-eef3-42f2-b4e6-90af402792ee" >
+					<flow-ref doc:name="set-log-message" doc:id="6440f4cf-e3a6-45b2-be3c-1685346ac492" name="set-log-message" target="startLogData"/>
+				</async>
+			</route>
+		</scatter-gather>
+		<remove-variable doc:name="Remove tracepoint" doc:id="3d4c41e3-1aed-47a2-bd67-a56e505c9be6" variableName="tracepoint" />
+	</sub-flow>
+	<sub-flow name="log-request-external-api-or-system" doc:id="6ca1ea42-8c16-43d9-afc8-c38e492e9c89" >
+		<async doc:name="Async" doc:id="0c6d585b-e3a8-41ca-aebc-fc01c4884460" >
+			<json-logger:logger doc:name="LOG REQUEST TO EXTERNAL API OR SYSTEM" doc:id="a44510fe-fe58-4cbe-b3d3-39e8afb819d3" config-ref="JSON_Logger_Config" tracePoint="BEFORE_REQUEST" message='#["LOG REQUEST TO EXTERNAL API OR SYSTEM"]' correlationId="#[vars.apiCorrelationId]" category="${json.logger.category}" priority="#[Mule::p('json.logger.priority')]">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+		</json-logger:logger>
+		</async>
+	</sub-flow>
+	<sub-flow name="log-response-external-api-or-system" doc:id="0d7a43d3-9c3a-49ed-adde-0dbe9bf6988e" >
+		<async doc:name="Async" doc:id="a2f657e3-e78d-4ad6-9440-937754a6c695" >
+			<json-logger:logger doc:name="LOG RESPONSE TO EXTERNAL API OR SYSTEM" doc:id="d4edf26a-2305-4ba1-bb3e-1fdf1951ba4b" config-ref="JSON_Logger_Config" tracePoint="AFTER_REQUEST" message='#["LOG RESPONSE TO EXTERNAL API OR SYSTEM"]' correlationId="#[vars.apiCorrelationId]" category="${json.logger.category}" priority="#[Mule::p('json.logger.priority')]">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+		</json-logger:logger>
+		</async>
+	</sub-flow>
+	<sub-flow name="log-request-internal-api-or-system" doc:id="d6574254-4159-432e-8eba-4f6f581a7ac5" >
+		<async doc:name="Async" doc:id="1a68a873-8912-4773-bf50-b9f94043c98e" >
+			<json-logger:logger doc:name="LOG REQUEST TO INTERNAL API OR SYSTEM" doc:id="67a35f4c-5eb4-40b9-b794-ce869e159d61" config-ref="JSON_Logger_Config" tracePoint="BEFORE_REQUEST" message='#["LOG REQUEST TO INTERNAL API OR SYSTEM"]' correlationId="#[vars.apiCorrelationId]" category="${json.logger.category}" priority="#[Mule::p('json.logger.priority')]">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+		</json-logger:logger>
+		</async>
+	</sub-flow>
+	<sub-flow name="log-response-internal-api-or-system" doc:id="6f8b63ea-44e6-4ce4-af3a-d51f80db4e73" >
+		<async doc:name="Async" doc:id="18740dbd-62a7-4792-a132-9433dcfdb3e1" >
+			<json-logger:logger doc:name="LOG RESPONSE TO INTERNAL API OR SYSTEM" doc:id="f14028ad-cea8-431f-a05a-bc8365a5cad8" config-ref="JSON_Logger_Config" tracePoint="AFTER_REQUEST" message='#["LOG RESPONSE TO INTERNAL API OR SYSTEM"]' correlationId="#[vars.apiCorrelationId]" category="${json.logger.category}" priority="#[Mule::p('json.logger.priority')]">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+		</json-logger:logger>
+		</async>
+	</sub-flow>
+	<sub-flow name="log-before-transform-message" doc:id="eb569524-4312-4ee8-9112-a910dbab11f2" >
+		<async doc:name="Async" doc:id="6b633923-63ba-4d8f-934c-2470a029661f" >
+			<json-logger:logger doc:name="LOG MESSAGE BEFORE TRANSFORMATION" doc:id="c4aa4f97-81cb-4702-b446-26db6f5cfa76" config-ref="JSON_Logger_Config" tracePoint="BEFORE_TRANSFORM" message='#["LOG MESSAGE BEFORE TRANSFORMATION"]' correlationId="#[vars.apiCorrelationId]" category="${json.logger.category}">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+		</json-logger:logger>
+		</async>
+	</sub-flow>
+	<sub-flow name="log-after-transform-message" doc:id="4d88c0c2-44f4-418d-8c17-2dbe5a78cb00" >
+		<async doc:name="Async" doc:id="4a10bd16-6e15-4a0c-a89c-508b019b97c8" >
+			<json-logger:logger doc:name="LOG MESSAGE AFTER TRANSFORMATION" doc:id="511126be-d40b-45e1-a782-5e74787af6dd" config-ref="JSON_Logger_Config" tracePoint="AFTER_TRANSFORM" message='#["LOG MESSAGE AFTER TRANSFORMATION"]' correlationId="#[vars.apiCorrelationId]" category="${json.logger.category}" priority="#[Mule::p('json.logger.priority')]">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+		</json-logger:logger>
+		</async>
+	</sub-flow>
+	<sub-flow name="log-error-exception" doc:id="5133a64d-e180-4bcb-9e1e-861212bb29ed" >
+		<set-variable value='#["ERROR"]' doc:name="Set tracepoint" doc:id="02a7ccef-a855-4fc8-8caa-3eec3e7a8ce7" variableName="tracepoint" />
+		<scatter-gather doc:name="Scatter-Gather" doc:id="ca81c2f2-a246-4b64-bebb-153a44196a8d" target="exceptionScatterGather">
+			<route >
+				<async doc:name="Async" doc:id="363f9d9d-8d76-4883-acb0-c166f46544a6" >
+					<json-logger:logger doc:name='"LOG ERROR EXCEPTION' doc:id="385f031a-86cc-4ff5-bb99-993652fd950b" config-ref="JSON_Logger_Config" tracePoint="EXCEPTION" message='#["LOG ERROR EXCEPTION"]' correlationId="#[vars.apiCorrelationId]" priority="#[Mule::p('json.logger.priority')]">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+		</json-logger:logger>
+				</async>
+			</route>
+			<route >
+				<async doc:name="Async" doc:id="18991867-d3fb-4c0c-9f35-11cc165e183c" >
+					<flow-ref doc:name="set-log-message" doc:id="7fa74ddc-3c17-47c5-bec7-68ac17b21a9f" name="set-log-message" target="endLogData" />
+				</async>
+			</route>
+		</scatter-gather>
+		<remove-variable doc:name="Remove tracepoint" doc:id="e3274b8e-7027-4278-ab6d-28a31bcd9e45" variableName="tracepoint" />
+	</sub-flow>
+	<sub-flow name="log-end" doc:id="4dbece9d-fa5b-4488-9a59-fbec5cd6eb83" >
+		<set-variable value='#["END"]' doc:name="Set tracepoint" doc:id="7b2ea7db-2736-4349-82a4-769441578d00" variableName="tracepoint"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="1218fbf7-a5f7-4b3a-a9f7-6ab6a93ee4d4" target="endScatterGather">
+			<route >
+				<async doc:name="Async" doc:id="ef0c6602-a285-4596-a012-29652804b9d7">
+			<json-logger:logger doc:name="LOG END" doc:id="e7a0a2bc-66a0-485b-a0f7-b9e4c6f3d057" config-ref="JSON_Logger_Config" tracePoint="END" message='#["LOG END"]' correlationId="#[vars.apiCorrelationId]" category="${json.logger.category}" priority="#[Mule::p('json.logger.priority')]">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+		</json-logger:logger>
+		</async>
+			</route>
+			<route >
+				<async doc:name="Async" doc:id="3ce6c46d-45b8-46cb-a617-d7833e997992" >
+					<flow-ref doc:name="set-log-message" doc:id="8dd2f21b-b4e7-4c6b-81ba-223a98207e78" name="set-log-message" target="endLogData"/>
+				</async>
+			</route>
+		</scatter-gather>
+		<remove-variable doc:name="Remove tracepoint" doc:id="1e34df6d-f68d-4d6c-b0d2-21c6f58aecc8" variableName="tracepoint"/>
+	</sub-flow>
+	<sub-flow name="log-flow" doc:id="03e346a9-a516-43fb-a165-d2ba32772857" >
+		<async doc:name="Async" doc:id="5ec419f6-4fab-43a3-b9a3-2885915194f9" >
+			<json-logger:logger doc:name="LOG FLOW" doc:id="585e40ad-92af-4af7-801d-24db84cf8089" config-ref="JSON_Logger_Config" message='#["LOG FLOW"]' tracePoint="FLOW" correlationId="#[vars.apiCorrelationId]" category="${json.logger.category}" priority="#[Mule::p('json.logger.priority')]">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+		</json-logger:logger>
+		</async>
+	</sub-flow>
+	<flow name="set-log-data" doc:id="324e8709-f22b-4e83-a328-14fb414b1de9" >
+		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	&quot;runtimeEngine&quot;: &quot;worker1&quot;,&#10;	&quot;environment&quot;: Mule::p('mule.env'),&#10;	&quot;domain&quot;: Mule::p('app.domain'),&#10;	&quot;correlationId&quot;: vars.apiCorrelationId default &quot;&quot;,&#10;	&quot;appName&quot;: Mule::p('app.name'),&#10;	&quot;appVersion&quot;: Mule::p('app.version'),&#10;	&quot;layer&quot;: vars.appLayer default &quot;&quot;,&#10;	&quot;priority&quot;: Mule::p('mule.priority'),&#10;	&quot;tracePoint&quot;: vars.tracepoint default &quot;&quot;,&#10;	&quot;postDate&quot;: now(),&#10;	&quot;category&quot;: &quot;sdsdsd&quot;,&#10;	&quot;message&quot;: message.payload&#10;}]" doc:name="Set logData" doc:id="f26738e6-c4d2-4f02-895a-11c662700722" variableName="logData"/>
+	</flow>
+	<flow name="remove-log-data" doc:id="e35129ef-ac14-43f0-941f-931d40d63034" >
+		<remove-variable doc:name="Remove logData" doc:id="591d7c90-3c56-4db4-93df-5f9d307374c5" variableName="logData"/>
+	</flow>
+	<sub-flow name="set-log-message" doc:id="042bd086-d043-4b72-a9db-496e4e1297bb" >
+		<ee:transform doc:name="Convert JSON String to JSON Object" doc:id="6ee2eaff-3984-4c71-b84e-fd57bcf3f605">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+
+import dwls::CustomModule
+
+output application/json
+---
+CustomModule::convertJSONStringToJSONObject(message.payload)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="set-log-data" doc:id="958a2d70-7027-4844-9ae3-91d2ba405750" name="set-log-data"/>
+		<http:request method="POST" doc:name="Request to local Elasticsearch" doc:id="255558a0-13b1-4643-97db-57743655108f" config-ref="HTTP_Request_Elasticsearch" path="/mule/logs" >
+			<http:body ><![CDATA[#[vars.logData default ""]]]></http:body>
+		</http:request>
+		<flow-ref doc:name="remove-log-data" doc:id="23954d90-f522-4003-b2b3-72bd1f9222c1" name="remove-log-data"/>
+	</sub-flow>
+</mule>

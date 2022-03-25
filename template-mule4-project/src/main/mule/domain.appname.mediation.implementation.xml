@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<sub-flow name="mediation-implementation" doc:id="db8fe765-b67b-4480-bb93-228ce320970b" >
+		<flow-ref doc:name="mediation-process-flow" doc:id="e14a353d-ca17-4e0f-90e5-371993b812a7" name="mediation-process-flow" />
+	</sub-flow>
+	<flow name="mediation-process-flow" doc:id="bddd84cc-3b77-4fba-942a-2d89c34b16ac" >
+		<raise-error doc:name="Raise error TIMEOUT" doc:id="3f682da8-f8e5-4f13-b4ef-2db450165c78" type="TIMEOUT"/>
+	</flow>
+</mule>
